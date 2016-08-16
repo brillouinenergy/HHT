@@ -16,9 +16,6 @@ QPulseLengthns = QPulseLength0x28ns0x29; clear QPulseLength0x28ns0x29
 QPulseDelays = QPulseDelay0x28s0x29; clear QPulseDelay0x28s0x29
 QkHz = QKHz; clear QKHz;
 dateN=datenum(DateTime,'mm/dd/yyyy HH:MM:SS');
-dateN(1)
-dateHour = datetime(DateTime);
-dateHour(1)
 reltime=24*(dateN-dateN(1)); %in days*24 = hours
 titletxt=strcat('BEC HHT test from ',DateTime(1),' through ',DateTime(end)); %how to keep trailing spaces?
 qi=find(QOccurred == 1);
@@ -37,16 +34,15 @@ if length(ALARM) > 0
     datetick('x','keeplimits')
 end
 size(DateTime)
-
+d1=DateTime(11*360)
 size(CoreReactorTemp)
 %dlmwrite('dt.txt',DateTime,'');
-j1 = horzcat(reltime,CoreReactorTemp,CoreHtrPow,QkHz,QPulseVolt);
+j1 = horzcat(reltime,CoreReactorTemp,CoreHtrPow);
 %dlmwrite('j1.txt',j1,',');
 
 size(j1)
 %start only when runs started
 j1=j1(11*360:end,:);
-
 IC1 = j1(:,2) < 90 ;
 tabulate(IC1)
 j1(IC1,:)=[];
@@ -64,18 +60,28 @@ plot(j1(:,2),j1(:,3),'r','linewidth',2)
 xlabel('Inner Core Temp')
 ylabel('Heat Power')
 grid
-ylim([0 150])
-if strfind(DateTime(1),'8/11/2016') 
-    p1=j1(7042,:);
-    p2=j1(9009,:);
-    p3=j1(10437,:);
-    p4=j1(12134,:);
-    p5=j1(13701,:);
-    p6=j1(end,:);
+ylim([0 250])
+%title('Heater Power vs. InnerCore Temp')
+figure
+xlabel('hours')
+yyaxis left
+ylabel('Inner Core Temp')
+hold on
+grid
+plot(j1(:,1),j1(:,2),'linewidth',2)
+yyaxis right
+ylabel('Heat Power')
+grid
+plot(j1(:,1),j1(:,3),'linewidth',2)
+hold off
+figure
 
-else
-  
-end    
+p1=j1(7042,:);
+p2=j1(9009,:);
+p3=j1(10437,:);
+p4=j1(12134,:);
+p5=j1(13701,:);
+p6=j1(end,:);
 j2=vertcat(p1,p2,p3,p4,p5,p6);
 
 p=polyfit(j2(:,2),j2(:,3),2);

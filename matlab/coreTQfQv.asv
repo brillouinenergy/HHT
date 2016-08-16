@@ -51,8 +51,8 @@ j1=j1(11*360:end-endTime,:);
 %j1(IC2,:)=[];
 %size(j1)
 t1 = [100 200 300 400 500 600]
-for qkHz = 50:25:100
-    for qV = 50:50:250
+for qkHz = 50:25:75
+    for qV = 50:50:50
         clear j2
         clear j3
         clear j4
@@ -61,8 +61,8 @@ for qkHz = 50:25:100
         dt = datetime(j2(:,1), 'ConvertFrom', 'datenum') ;
         figure
         grid
-        
-        title(['QkHz=' num2str(qkHz) ' QVolts=' num2str(qV)])
+        tt = strcat('QkHz=', qkHz, ' QVolts=', qV );
+        title(tt)
         xlabel('Date')
         yyaxis left
         ylabel('Inner Core Temp')
@@ -89,8 +89,8 @@ for qkHz = 50:25:100
 
         y1 = polyval(p,t1);
         figure
+        title(tt)
         plot(t1,j4,'linewidth',2)
-        title(['QkHz=' num2str(qkHz) ' QVolts=' num2str(qV)])
         hold on
         plot(t1,y1,'linewidth',2)
         legend('Heat Power',polyfit_str) 
