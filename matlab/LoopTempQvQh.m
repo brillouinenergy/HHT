@@ -81,26 +81,21 @@ for ict = 100:100:600 %inner core temperature
         for qkHz = 50:25:100 
             ki = ki + 1;
             qVC = qV*sqrt(2);
-            j2 = j1((abs(j1(:,2)-ict) < 10 & abs(j1(:,4)-qkHz) < 1 & abs(j1(:,5)-qVC) < 19) ,:);
+            j2 = j1((abs(j1(:,2)-ict) < 3 & abs(j1(:,4)-qkHz) < 1 & abs(j1(:,5)-qVC) < 19) ,:);
             fn = ['C:\jinwork\BEC\tmp\q' num2str(whichEx) num2str(ict) num2str(qV) num2str(qkHz) '.csv'];
             dt = datetime(j2(:,1), 'ConvertFrom', 'datenum') ;    
             %dt.Format = 'mm/dd/yyyy HH:MM:SS';
             T = table(dt,j2(:,2),j2(:,3),j2(:,4),j2(:,5),'VariableName',{'DateTime','InnerCoreTemp','Power','QkHz','Qvolts'});
             writetable(T,fn);
             nj3 = size(j2(:,1),1)
-            j5(i) = nj3   
-            j4(i) = 0
-            t2(i) = ict
-            if nj3 > 20 % minimum requirement is 40 minutes for power watt change < 0.3  
+            j5(ti) = nj3   
+            j4(ti) = 0
+            t2(ti) = ict
+            if nj2 > 240 % minimum requirement is 40 minutes for power watt change < 0.3  
               for ni = nj3:-1:2 
                 %search the core hrt power change less than 0.3 W
-                j2(ni,3)
                 if (abs(j2(ni,3)-j2(ni-5,3))<=0.3 & j2(ni,3) > 0 & j2(ni,3) < 150)
-                   dt = datetime(j2(ni,1), 'ConvertFrom', 'datenum') ;    
-            %dt.Format = 'mm/dd/yyyy HH:MM:SS';
-            T = table(dt,j2(:,2),j2(:,3),j2(:,4),j2(:,5),'VariableName',{'DateTime','InnerCoreTemp','Power','QkHz','Qvolts'});
-        
-                   j4(i) = j2(ni,3)
+                   j4(ti) = j2(ni,3)
                             
                    break;
                 end

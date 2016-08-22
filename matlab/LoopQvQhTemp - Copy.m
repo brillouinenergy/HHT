@@ -79,7 +79,6 @@ j1 = horzcat(dateN,InnerCoreTemp,CoreHtrPow,QkHz,QPulseVolt);
 j1=j1(startTime*360:end-endTime*360,:);
 tp = [];
 dt2=[];
-dt1=[];
 vi = 0;
 for qV = 50:50:250
     vi = vi + 1;
@@ -128,21 +127,19 @@ for qV = 50:50:250
             for temp = [100 200 275 300 400 500 600]
                 i = i+1;
                 %pick up data with the particular tempareture
-                j3 = j2((abs(j2(:,2)-temp) < 2.5) ,:);
+                j3 = j2((abs(j2(:,2)-temp) < 3) ,:);
                 nj3 = size(j3(:,1),1);
                 j5(i) = nj3;
                 j4(i) = 0;
                 %recording the time starting for this tempareture
-               
-                dt1(i) = j2(1,1);
+                dt1(i) = j3(:,1);
                 t2(i) = temp;
                 if nj3 > 240 % minimum requirement is 40 minutes for power watt change < 0.3  
-                    dt1(i) = j3(1,1); % it should capture the last point
                     for ni = nj3:-1:2 
                         %search the core hrt power change less than 0.3 W
                         if (j3(ni,3) > 0 & j3(ni,3) < 150 & abs(j3(ni,3)-j3(ni-20,3))<=0.3 )
-                           j4(i) = j3(ni,3);
-                           dt1(i) = j3(ni,1); 
+                            j4(i) = j3(ni,3);
+                            
                            break;
                         end
                     end    
@@ -175,12 +172,13 @@ for qV = 50:50:250
         end
     end
 end 
-fn = ['C:\jinwork\BEC\tmp\tp-' num2str(whichEx) '.xls'];            
+fn = ['C:\jinwork\BEC\tmp\tp' num2str(whichEx) '.csv'];            
 dt3 = datetime(dt2, 'ConvertFrom', 'datenum') ;
-
-%T = table(tp(:,1:19),dt3(:,1:7),'VariableName',{'Qvolts','QkHz','x2','x','c','100','200','275','300','400','500','600','100','200','275','300','400','500','600','100','200','275','300','400','500','600'});
-T = table(tp(:,1:19),dt3(:,1:7))
-writetable(T,fn);
+            
+            %dt.Format = 'mm/dd/yyyy HH:MM:SS';
+            
+T = table(tp,dt3,'VariableName',{'Qvolts','QkHz'InnerCoreTemp','Power','QkHz','Qvolts'});
+            writetable(T,fn);
 
 fn = ['C:\jinwork\BEC\tmp\tp' num2str(whichEx) '.csv']
 dlmwrite(fn,tp,',');
