@@ -5,7 +5,7 @@ addpath('C:\jinwork\BE\matlab\addaxis5')
 
 %looking at Berkeley HHT
 SYS = 'BEC Core B37';
-whichEx = 5;
+whichEx = 4;
 Directory='C:\jinwork\BEC\data\ConF00_copy\2016-07-21';
 AllFiles = getall(Directory);  %SORTED BY DATE....
 
@@ -27,6 +27,7 @@ AllFiles = getall(Directory);  %SORTED BY DATE....
 %e3 8/15/2016 22:00(16 hours) - 8/18/2016 20:00 (10 hours) h w Q
 %e4 8/18/2016 23:00(17 hours) - 8/19/2016 13:00 (17 hours) h no Q
 %e5 8/19/2016 16:30(10 hours) -                            h w Q
+qpulse = 1;
 switch (whichEx)
     case 1 
         startTime = 10; %11 hours after 6:00
@@ -34,12 +35,13 @@ switch (whichEx)
         Experiment = AllFiles(1:3);
         rowPerFigure = 1;
         columnPerFigure = 1;
+        qpulse = 0;
     case 2
         startTime = 10; %
         endTime = 11.5;
         Experiment = AllFiles(3:6);
-        rowPerFigure = 5;
-        columnPerFigure = 3;
+        rowPerFigure = 1;
+        columnPerFigure = 1;
     case 3
         startTime = 13; %
         endTime = 5;
@@ -52,10 +54,11 @@ switch (whichEx)
         Experiment = AllFiles(9:10);
         rowPerFigure = 1;
         columnPerFigure = 1;
+        qpulse = 0
    case 5
         startTime = 9; %
         endTime = 0;
-        Experiment = AllFiles(10:12);
+        Experiment = AllFiles(10:14);
         rowPerFigure = 1;
         columnPerFigure = 1;
     otherwise
@@ -84,39 +87,38 @@ vi = 0;
 for qV = 50:50:250
     vi = vi + 1;
     ki = 0;
+    qVC = qV*sqrt(2)- 5; % some radiation lost volts
     for qkHz = 50:25:100
+        if qpulse == 0
+            qV = 0
+            qVC = 0
+            qkHz = 0
+        end
+            
         ki = ki + 1;
-        clear j2
-        clear j3
-        clear j4
-        qVC = qV*sqrt(2);
-        j2 = j1((abs(j1(:,4)-qkHz) < 1 & abs(j1(:,5)-qVC) < 19) ,:);
-        
+        j2 = j1((abs(j1(:,4)-qkHz) < 1 & abs(j1(:,5)-qVC) < 5 ), :);        
         if size(j2(:,1)) > 0
-            fn = ['C:\jinwork\BEC\tmp\q' num2str(whichEx) num2str(qV) num2str(qkHz) '.csv'];
-            
-            dt = datetime(j2(:,1), 'ConvertFrom', 'datenum') ;
-            
-            %dt.Format = 'mm/dd/yyyy HH:MM:SS';
-            
+            fn = ['C:\jinwork\BEC\tmp\q' num2str(whichEx) num2str(qV) num2str(qkHz) '.csv'];          
+            dt = datetime(j2(:,1), 'ConvertFrom', 'datenum') ;        
+            %dt.Format = 'mm/dd/yyyy HH:MM:SS';         
             T = table(dt,j2(:,2),j2(:,3),j2(:,4),j2(:,5),'VariableName',{'DateTime','InnerCoreTemp','Power','QkHz','Qvolts'});
             writetable(T,fn);
-            if (1==0)
-            figure(1)
+            if (1==1)
+            figure(ki+(vi-1)*3)
             grid
             subplot(rowPerFigure,columnPerFigure,1 ) %ki + (vi-1)*3)
             %title(['QkHz=' num2str(qkHz) ' QVolts=' num2str(qV)])
             title([num2str(qV) num2str(qkHz)],'fontsize', 8)
-            %xlabel('Date')
+            xlabel('Date')
             yyaxis left
             ylim([0 700])
-            %ylabel('Inner Core Temp')
+            ylabel('Inner Core Temp')
             hold on
             grid
             %plot(dt,j2(:,2),'linewidth',2)
             plot(dt,j2(:,2))
             yyaxis right
-            %ylabel('Heat Power')
+            ylabel('Heat Power')
             ylim([0 150])
             grid
             %plot(dt,j2(:,3),'linewidth',2)
@@ -128,7 +130,7 @@ for qV = 50:50:250
             for temp = [100 200 275 300 400 500 600]
                 i = i+1;
                 %pick up data with the particular tempareture
-                j3 = j2((abs(j2(:,2)-temp) < 2.5) ,:);
+                j3 = j2((abs(j2(:,2)-temp) < 3) ,:);
                 nj3 = size(j3(:,1),1);
                 j5(i) = nj3;
                 j4(i) = 0;
@@ -139,7 +141,9 @@ for qV = 50:50:250
                 if nj3 > 240 % minimum requirement is 40 minutes for power watt change < 0.3  
                     dt1(i) = j3(1,1); % it should capture the last point
                     for ni = nj3:-1:2 
-                        %search the core hrt power change less than 0.3 W
+                        %search the core hrt power change less than 0.3 W,
+                        %it is very accurate so far, but it should be
+                        %max(j3(ni-230:ni,3)) - min(j3(ni-230:ni,3))<=0.3
                         if (j3(ni,3) > 0 & j3(ni,3) < 150 & abs(j3(ni,3)-j3(ni-20,3))<=0.3 )
                            j4(i) = j3(ni,3);
                            dt1(i) = j3(ni,1); 
@@ -150,30 +154,37 @@ for qV = 50:50:250
             end
             
             p=polyfit(t2, j4, 2);
+            if (1 == 0) 
             polyfit_str = ['fitting:' num2str(p(1)) '*x^2+(' num2str(p(2)) '*x)+(' num2str(p(3)) ')'];
                
             y1 = polyval(p,t2);
-            figure(2)
+            %figure(2)
             xlim([100 600])
-            subplot(rowPerFigure,columnPerFigure,1 ) %ki + (vi-1)*3)
-            plot(t2,j4,'r')
+            %subplot(rowPerFigure,columnPerFigure,1 ) %ki + (vi-1)*3)
+            %plot(t2,j4,'r')
             ylim([0 150])
             title([num2str(qV) num2str(qkHz)],'fontsize', 8)
             %title(['QkHz=' num2str(qkHz) ' QVolts=' num2str(qV)])
             hold on
-            plot(t2,y1,'b')
+            %plot(t2,y1,'b')
             %legend('Heat Power',polyfit_str) 
             %ylabel('Heat Power')
             %xlabel('Inner Core Temp')
             grid
             xlim([100 600])
             hold off
-               
+            end   
             tpi = [qV qkHz p(1) p(2) p(3) j4 j5];
             tp = vertcat(tp,tpi);
             dt2 = vertcat(dt2,dt1);
         end
+        if qpulse == 0
+            break
+        end
     end
+    if qpulse ==0  
+       break 
+    end    
 end 
 fn = ['C:\jinwork\BEC\tmp\tp-' num2str(whichEx) '.xls'];            
 dt3 = datetime(dt2, 'ConvertFrom', 'datenum') ;
