@@ -5,8 +5,8 @@ addpath('C:\jinwork\BE\matlab\addaxis5')
 
 %looking at Berkeley HHT
 SYS = 'BEC Core B37';
-whichEx = 5;
-Directory='C:\jinwork\BEC\data\ConF00_copy\2016-07-21';
+whichEx = 1;
+Directory='C:\jinwork\BEC\Data\isoperibolic_data\2016-08-20-CORE_26b';
 AllFiles = getall(Directory);  %SORTED BY DATE....
 
 %1 21 (8/10/2016 6:00 - 8/11/2016 5:59)
@@ -30,8 +30,8 @@ AllFiles = getall(Directory);  %SORTED BY DATE....
 qpulse = 1;
 switch (whichEx)
     case 1 
-        startTime = 10; %11 hours after 6:00
-        endTime = 20;   %20 hours before next day 6:00am
+        startTime = 0; %11 hours after 6:00
+        endTime = 0;   %20 hours before next day 6:00am
         Experiment = AllFiles(1:3);
         rowPerFigure = 1;
         columnPerFigure = 1;
@@ -66,7 +66,7 @@ switch (whichEx)
 end;
 Experiment'
 
-loadHHT 
+loadIPB 
 %change a few messy variable names
 QOccurred = QOccurred0x3F; clear QPulseOccurred0x3F
 QPulseLengthns = QPulseLength0x28ns0x29; clear QPulseLength0x28ns0x29
@@ -77,13 +77,65 @@ DateTime(startTime*360)
 DateTime(end - endTime*360)
 reltime=24*(dateN-dateN(1)); %in days*24 = hours
 %titletxt=strcat('BEC HHT test from ',DateTime(startTime*360),' through ',DateTime(end - endTime*360)); %how to keep trailing spaces?
-j1 = horzcat(dateN,InnerCoreTemp,CoreHtrPow,QkHz,QPulseVolt);
+j1 = horzcat(dateN,CoreTemp,QkHz,QPulseLength,QPulseVolt,isoperibolicCalorimetryPowerCoreHtrPow);
 %start only when runs started
 j1=j1(startTime*360:end-endTime*360,:);
+
+dt = datetime(j2(:,1), 'ConvertFrom', 'datenum') ;   
+figure(1) 
+x = 0:20;
+N = numel(x);
+y1 = rand(1,N);
+y2 = 5.*rand(1,N)+5;
+y3 = 50.*rand(1,N)-50;
+
+%# Some initial computations:
+axesPosition = [110 40 200 200];  %# Axes position, in pixels
+yWidth = 30;                      %# y axes spacing, in pixels
+xLimit = [min(x) max(x)];         %# Range of x values
+xOffset = -yWidth*diff(xLimit)/axesPosition(3);
+
+%# Create the figure and axes:
+figure('Units','pixels','Position',[200 200 330 260]);
+h1 = axes('Units','pixels','Position',axesPosition,...
+          'Color','w','XColor','k','YColor','r',...
+          'XLim',xLimit,'YLim',[0 1],'NextPlot','add');
+h2 = axes('Units','pixels','Position',axesPosition+yWidth.*[-1 0 1 0],...
+          'Color','none','XColor','k','YColor','m',...
+          'XLim',xLimit+[xOffset 0],'YLim',[0 10],...
+          'XTick',[],'XTickLabel',[],'NextPlot','add');
+h3 = axes('Units','pixels','Position',axesPosition+yWidth.*[-2 0 2 0],...
+          'Color','none','XColor','k','YColor','b',...
+          'XLim',xLimit+[2*xOffset 0],'YLim',[-50 50],...
+          'XTick',[],'XTickLabel',[],'NextPlot','add');
+xlabel(h1,'time');
+ylabel(h3,'values');
+
+%# Plot the data:
+plot(h1,x,y1,'r');
+plot(h2,x,y2,'m');
+plot(h3,x,y3,'b');
+title([num2str(qV) num2str(qkHz)],'fontsize', 8)
+xlabel('Date')
+yyaxis left
+ylim([0 600])
+ylabel('Core Temp')
+hold on
+grid
+plot(dt,j2(:,2))
+            yyaxis right
+            ylabel('Heat Power')
+            ylim([0 150])
+            grid
+            %plot(dt,j2(:,3),'linewidth',2)
+            plot(dt,j2(:,3))
+            hold off
+            end
 tp = [];
 dt2=[];
 dt1=[];
 vi = 0;
+
 for qV = 50:50:250
     vi = vi + 1;
     ki = 0;
